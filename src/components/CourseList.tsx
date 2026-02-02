@@ -40,7 +40,8 @@ function CourseListItem(props: CourseListItemProps) {
     declined: "",
     ineligible: "border-gray-200 bg-gray-100",
   };
-  const showConflict = props.conflictCourses.length > 0;
+  const showConflict =
+    props.conflictCourses.length > 0 && props.item.tag !== "enrolled";
 
   return (
     <div
@@ -60,9 +61,9 @@ function CourseListItem(props: CourseListItemProps) {
             <span
               className={cn(
                 "text-xs",
-                props.item.tag === "enrolled" && "text-yellow-700",
-                props.item.tag === "planned" && "text-sm text-red-700",
-                "text-yellow-700",
+                props.item.tag === "planned"
+                  ? "text-red-700"
+                  : "text-yellow-700",
               )}
             >
               {props.conflictCourses
