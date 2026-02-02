@@ -1,5 +1,5 @@
 import { ExternalLink } from "lucide-react";
-import { Course } from "@/models/course";
+import { Course, CourseCode } from "@/models/course";
 import { CourseViewItem, CourseViewItemTag } from "@/models/courseView";
 import { CourseTagSelector } from "./CourseTagSelector";
 import { SyllabusLink } from "./SyllabusLink";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export interface CourseListProps {
   items: Array<CourseViewItem>;
   onCourseClick: (course: Course, newTag: CourseViewItemTag) => void;
+  conflictCourses?: Map<CourseCode, Array<Course>>;
 }
 
 export function CourseList(props: CourseListProps) {
@@ -18,6 +19,7 @@ export function CourseList(props: CourseListProps) {
           key={item.code}
           item={item}
           onClick={props.onCourseClick}
+          conflictCourses={props.conflictCourses?.get(item.code) ?? []}
         />
       ))}
     </div>
@@ -27,6 +29,7 @@ export function CourseList(props: CourseListProps) {
 interface CourseListItemProps {
   item: CourseViewItem;
   onClick: (course: Course, newTag: CourseViewItemTag) => void;
+  conflictCourses: Array<Course>;
 }
 
 function CourseListItem(props: CourseListItemProps) {
@@ -37,6 +40,8 @@ function CourseListItem(props: CourseListItemProps) {
     declined: "",
     ineligible: "border-gray-200 bg-gray-100",
   };
+  const showConflict =
+    props.conflictCourses.length > 0 && props.item.tag !== "enrolled";
 
   return (
     <div
@@ -52,6 +57,20 @@ function CourseListItem(props: CourseListItemProps) {
         <div className="flex flex-col items-start">
           <span className="text-xs">{props.item.code}</span>
           <b className="text-md max-w-3xl text-left">{props.item.name}</b>
+          {showConflict ? (
+            <span
+              className={cn(
+                "text-xs",
+                props.item.tag === "planned"
+                  ? "text-red-700"
+                  : "text-yellow-700",
+              )}
+            >
+              {props.conflictCourses
+                .map((course) => `${course.code} ${course.name}`)
+                .join(", ")}
+            </span>
+          ) : null}
         </div>
         <div className="flex items-center gap-x-4">
           <div className="text-right">

@@ -224,3 +224,71 @@ function isCourseInPeriod(
 
   return false;
 }
+
+export type CourseTimeSlot = {
+  semester: CourseSemester;
+  module: CourseModule;
+  day: CourseDay;
+  period: CoursePeriod;
+};
+
+export function getCourseTimeSlots(course: Course): Array<CourseTimeSlot> {
+  const slots: Array<CourseTimeSlot> = [];
+  for (const semester of courseSemesterValues) {
+    for (const module of courseModuleValues) {
+      if (!isCourseInModule(course, semester, module)) continue;
+      for (const day of courseDayValues) {
+        for (const period of coursePeriodValues) {
+          if (!isCourseInPeriod(course, day, period)) continue;
+          slots.push({ semester, module, day, period });
+        }
+      }
+    }
+  }
+  return slots;
+}
+
+function toSlotKey(slot: CourseTimeSlot): string {
+  return `${slot.semester}${slot.module}-${slot.day}${slot.period}`;
+}
+
+export function getPlannedCourseConflicts(
+  courses: Array<Course>,
+  selectedCourses: SelectedCourses,
+): Map<CourseCode, Array<Course>> {
+  const courseByCode = new Map(courses.map((course) => [course.code, course]));
+  const plannedCourses = Array.from(selectedCourses.values())
+    .filter((course) => course.tag === "planned")
+    .map((course) => courseByCode.get(course.code))
+    .filter((course): course is Course => Boolean(course));
+
+  const slotToPlannedCourses = new Map<string, Map<CourseCode, Course>>();
+  for (const course of plannedCourses) {
+    for (const slot of getCourseTimeSlots(course)) {
+      const key = toSlotKey(slot);
+      const existing = slotToPlannedCourses.get(key) ?? new Map();
+      existing.set(course.code, course);
+      slotToPlannedCourses.set(key, existing);
+    }
+  }
+
+  const conflictCourses = new Map<CourseCode, Map<CourseCode, Course>>();
+  for (const course of courses) {
+    for (const slot of getCourseTimeSlots(course)) {
+      const plannedAtSlot = slotToPlannedCourses.get(toSlotKey(slot));
+      if (!plannedAtSlot) continue;
+      for (const [plannedCode, plannedCourse] of plannedAtSlot.entries()) {
+        if (plannedCode === course.code) continue;
+        const existing = conflictCourses.get(course.code) ?? new Map();
+        existing.set(plannedCode, plannedCourse);
+        conflictCourses.set(course.code, existing);
+      }
+    }
+  }
+
+  const results = new Map<CourseCode, Array<Course>>();
+  for (const [code, conflictMap] of conflictCourses.entries()) {
+    results.set(code, Array.from(conflictMap.values()));
+  }
+  return results;
+}
