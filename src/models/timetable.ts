@@ -252,18 +252,6 @@ function toSlotKey(slot: CourseTimeSlot): string {
   return `${slot.semester}${slot.module}-${slot.day}${slot.period}`;
 }
 
-export function getPlannedCourseConflictCounts(
-  courses: Array<Course>,
-  selectedCourses: SelectedCourses,
-): Map<CourseCode, number> {
-  const conflicts = getPlannedCourseConflicts(courses, selectedCourses);
-  const conflictCounts = new Map<CourseCode, number>();
-  for (const [code, conflictCourses] of conflicts.entries()) {
-    conflictCounts.set(code, conflictCourses.length);
-  }
-  return conflictCounts;
-}
-
 export function getPlannedCourseConflicts(
   courses: Array<Course>,
   selectedCourses: SelectedCourses,
